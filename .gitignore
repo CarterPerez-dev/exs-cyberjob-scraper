@@ -22,9 +22,6 @@ certscout-*.tar
 # Temporary files, for example, from tests.
 /tmp/
 
-# Generated scrape output (report, data, downloaded logos).
-/output/
-
 # Local toolchain dirs when building through Docker.
 /.mix/
 /.hex/
