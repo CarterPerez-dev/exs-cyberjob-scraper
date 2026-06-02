@@ -24,14 +24,17 @@ defmodule CertScout.Sources.USAJobs do
   @impl true
   def collect(%Config{usajobs: nil}) do
     Log.step("usajobs: skipped (set USAJOBS_API_KEY and USAJOBS_EMAIL)")
-    []
+    %{scanned: 0, postings: []}
   end
 
   def collect(%Config{usajobs: creds} = config) do
-    config.search_terms
-    |> Enum.flat_map(&collect_term(&1, creds, config))
-    |> Enum.uniq_by(& &1.id)
-    |> Enum.take(config.per_source_cap)
+    postings =
+      config.search_terms
+      |> Enum.flat_map(&collect_term(&1, creds, config))
+      |> Enum.uniq_by(& &1.id)
+      |> Enum.take(config.per_source_cap)
+
+    %{scanned: length(postings), postings: postings}
   end
 
   defp collect_term(term, creds, config) do

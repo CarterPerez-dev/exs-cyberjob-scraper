@@ -12,8 +12,10 @@ defmodule CertScout.Source do
   alias CertScout.Config
   alias CertScout.Posting
 
+  @type result :: %{scanned: non_neg_integer(), postings: [Posting.t()]}
+
   @callback label() :: String.t()
-  @callback collect(Config.t()) :: [Posting.t()]
+  @callback collect(Config.t()) :: result()
 
   @registry %{
     workday: CertScout.Sources.Workday,

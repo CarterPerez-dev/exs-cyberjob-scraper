@@ -10,7 +10,6 @@ defmodule CertScout do
 
   alias CertScout.Analyzer
   alias CertScout.Config
-  alias CertScout.Cyber
   alias CertScout.Log
   alias CertScout.Logos
   alias CertScout.Posting
@@ -22,20 +21,21 @@ defmodule CertScout do
   def run(%Config{} = config) do
     Log.info("CertScout starting | sources: #{Enum.join(config.sources, ", ")} | target: #{config.target}")
 
-    scraped =
-      config.sources
-      |> Enum.flat_map(&collect_source(&1, config))
-      |> Enum.uniq_by(&Posting.dedup_key/1)
+    {scanned, postings} =
+      Enum.reduce(config.sources, {0, []}, fn key, {scanned_acc, postings_acc} ->
+        %{scanned: scanned, postings: postings} = collect_source(key, config)
+        {scanned_acc + scanned, postings_acc ++ postings}
+      end)
 
     cyber =
-      scraped
-      |> filter_cyber(config)
+      postings
+      |> Enum.uniq_by(&Posting.dedup_key/1)
       |> cap(config.target)
 
-    Log.info("Scraped #{length(scraped)} postings | #{length(cyber)} cybersecurity roles | analyzing certifications")
+    Log.info("Scanned #{scanned} postings | #{length(cyber)} cybersecurity roles | analyzing certifications")
 
     analysis = Analyzer.analyze(cyber, config.certs)
-    meta = meta(scraped, cyber, config)
+    meta = meta(scanned, cyber, config)
 
     persist(config, cyber, analysis, meta)
     summarize(analysis, meta)
@@ -45,7 +45,7 @@ defmodule CertScout do
     case Source.module(key) do
       nil ->
         Log.step("unknown source: #{key}")
-        []
+        %{scanned: 0, postings: []}
 
       module ->
         Log.info("Source: #{module.label()}")
@@ -53,22 +53,19 @@ defmodule CertScout do
     end
   end
 
-  defp filter_cyber(postings, %Config{include_all: true}), do: postings
-  defp filter_cyber(postings, _config), do: Enum.filter(postings, &Cyber.match?(&1.title))
-
   defp cap(postings, target) when is_integer(target) and target > 0, do: Enum.take(postings, target)
   defp cap(postings, _target), do: postings
 
-  defp meta(scraped, cyber, config) do
+  defp meta(scanned, cyber, config) do
     companies =
-      scraped
+      cyber
       |> Enum.map(& &1.company)
       |> Enum.reject(&(is_nil(&1) or &1 == ""))
       |> Enum.uniq()
       |> length()
 
     %{
-      total_scraped: length(scraped),
+      total_scraped: scanned,
       cyber_postings: length(cyber),
       companies: companies,
       sources: Enum.map(config.sources, &to_string/1),

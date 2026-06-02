@@ -24,14 +24,17 @@ defmodule CertScout.Sources.Adzuna do
   @impl true
   def collect(%Config{adzuna: nil}) do
     Log.step("adzuna: skipped (set ADZUNA_APP_ID and ADZUNA_APP_KEY)")
-    []
+    %{scanned: 0, postings: []}
   end
 
   def collect(%Config{adzuna: creds} = config) do
-    config.search_terms
-    |> Enum.flat_map(&collect_term(&1, creds, config))
-    |> Enum.uniq_by(& &1.id)
-    |> Enum.take(config.per_source_cap)
+    postings =
+      config.search_terms
+      |> Enum.flat_map(&collect_term(&1, creds, config))
+      |> Enum.uniq_by(& &1.id)
+      |> Enum.take(config.per_source_cap)
+
+    %{scanned: length(postings), postings: postings}
   end
 
   defp collect_term(term, creds, config) do

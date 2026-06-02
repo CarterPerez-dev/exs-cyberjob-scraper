@@ -11,6 +11,7 @@ defmodule CertScout.Sources.RemoteOK do
   @behaviour CertScout.Source
 
   alias CertScout.Config
+  alias CertScout.Cyber
   alias CertScout.Html
   alias CertScout.HTTP
   alias CertScout.Log
@@ -23,15 +24,23 @@ defmodule CertScout.Sources.RemoteOK do
   def collect(%Config{} = config) do
     case HTTP.get_json("https://remoteok.com/api", config) do
       {:ok, [_legal | jobs]} when is_list(jobs) ->
-        postings = Enum.map(jobs, &posting/1)
+        postings =
+          jobs
+          |> Enum.filter(&keep?(&1["position"], config))
+          |> Enum.map(&posting/1)
+
         Log.progress_done("remoteok", length(postings))
-        postings
+        %{scanned: length(jobs), postings: postings}
 
       _ ->
         Log.progress_done("remoteok", 0)
-        []
+        %{scanned: 0, postings: []}
     end
   end
+
+  defp keep?(title, %Config{include_all: true}) when is_binary(title), do: title != ""
+  defp keep?(title, _config) when is_binary(title), do: Cyber.match?(title)
+  defp keep?(_title, _config), do: false
 
   defp posting(job) do
     %Posting{

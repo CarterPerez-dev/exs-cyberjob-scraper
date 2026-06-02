@@ -1,21 +1,21 @@
 rank,certification,issuer,postings,percent_of_cyber_postings
-1,CISSP,ISC2,164,22.7
-2,GIAC,GIAC,103,14.2
-3,CISM,ISACA,74,10.2
-4,CompTIA Security+,CompTIA,72,9.9
-5,OSCP,OffSec,58,8.0
-6,CISA,ISACA,54,7.5
-7,CEH,EC-Council,52,7.2
-8,CompTIA CASP+ / SecurityX,CompTIA,38,5.2
-9,CompTIA CySA+,CompTIA,38,5.2
-10,CCSP,ISC2,35,4.8
-11,CCNA,Cisco,27,3.7
-12,SSCP,ISC2,23,3.2
-13,CRISC,ISACA,17,2.3
-14,PMP,PMI,14,1.9
-15,AWS Certified Security,AWS,10,1.4
-16,Azure Security Engineer (AZ-500),Microsoft,9,1.2
-17,CompTIA PenTest+,CompTIA,4,0.6
-18,CompTIA Network+,CompTIA,2,0.3
-19,CCSK,Cloud Security Alliance,1,0.1
-20,CompTIA A+,CompTIA,1,0.1
+1,CISSP,ISC2,733,19.1
+2,GIAC,GIAC,398,10.4
+3,CISM,ISACA,317,8.3
+4,CompTIA Security+,CompTIA,294,7.7
+5,OSCP,OffSec,241,6.3
+6,CISA,ISACA,223,5.8
+7,CEH,EC-Council,206,5.4
+8,CCSP,ISC2,145,3.8
+9,CompTIA CySA+,CompTIA,109,2.8
+10,AWS Certified Security,AWS,105,2.7
+11,CRISC,ISACA,89,2.3
+12,CompTIA CASP+ / SecurityX,CompTIA,88,2.3
+13,CCNA,Cisco,64,1.7
+14,SSCP,ISC2,53,1.4
+15,Azure Security Engineer (AZ-500),Microsoft,48,1.3
+16,CCSK,Cloud Security Alliance,35,0.9
+17,PMP,PMI,26,0.7
+18,CompTIA Network+,CompTIA,20,0.5
+19,CompTIA PenTest+,CompTIA,11,0.3
+20,CompTIA A+,CompTIA,3,0.1

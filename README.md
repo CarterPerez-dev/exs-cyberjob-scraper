@@ -1,7 +1,7 @@
 <!-- © AngelaMos | 2026 -->
 <!-- README.md -->
 
-```
+```json
 ████████╗ ██████╗ ██████╗     ███████╗     ██████╗███████╗██████╗ ████████╗███████╗
 ╚══██╔══╝██╔═══██╗██╔══██╗    ██╔════╝    ██╔════╝██╔════╝██╔══██╗╚══██╔══╝██╔════╝
    ██║   ██║   ██║██████╔╝    ███████╗    ██║     █████╗  ██████╔╝   ██║   ███████╗
@@ -11,108 +11,183 @@
                                                                                    
 ```
 
-# CertScout
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif">
 
-A command-line web scraper, written in Elixir, that pulls cybersecurity job
-postings from public hiring APIs, isolates the genuine cybersecurity roles, and
-reports which certifications employers ask for most. It produces a clean
-Markdown report and raw JSON/CSV data. Every number it prints is the real count
-it pulled; nothing is fabricated.
+# Cybersecurity Certification Demand
 
-## What it does
+### 278,145 job postings scanned across 1,195 employers on 2026-06-02
 
-1. Fetches job postings from one or more pluggable sources (concurrently, with
-   polite rate limiting and backoff).
-2. Deduplicates them and isolates the cybersecurity subset with a precise
-   title/role classifier.
-3. Scans each posting's full text for a configurable list of certifications.
-4. Ranks the certifications by how many postings mention them and computes each
-   one's share of cybersecurity postings.
-5. Writes raw data to `output/data/` (JSON + CSV) and a report to
-   `output/REPORT.md`, with each top certification's real logo embedded.
+Of those, **11,511** were isolated as cybersecurity roles. Every number below is
+the real count of postings whose full text names the certification. Data sources:
+ashby, lever, greenhouse, workday.
 
-## Sources
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif">
 
-Sources are pluggable. The defaults need no keys.
+## Top 12 certifications in demand
 
-| Source | Auth | Notes |
-|--------|------|-------|
-| `workday` | none | Enterprise/defense Workday boards; keyword search, paginated, full descriptions. The volume engine. |
-| `greenhouse` | none | Greenhouse public boards; one request returns every posting with its description. |
-| `lever` | none | Lever public postings. |
-| `ashby` | none | Ashby public job boards. |
-| `remoteok` | none | Single public feed; small, good for a quick smoke test. |
-| `usajobs` | free key | Federal/DoD postings, the richest certification source. Set `USAJOBS_API_KEY` and `USAJOBS_EMAIL`. |
-| `adzuna` | free key | Market-wide keyword search, highest raw volume. Set `ADZUNA_APP_ID` and `ADZUNA_APP_KEY`. |
+| Rank | Certification | Issuer | Postings | Share |
+|-----:|---------------|--------|---------:|------:|
+| 1 | CISSP | ISC2 | 2,199 | 19.1% |
+| 2 | GIAC | GIAC | 1,194 | 10.4% |
+| 3 | CISM | ISACA | 951 | 8.3% |
+| 4 | CompTIA Security+ | CompTIA | 882 | 7.7% |
+| 5 | OSCP | OffSec | 723 | 6.3% |
+| 6 | CISA | ISACA | 669 | 5.8% |
+| 7 | CEH | EC-Council | 618 | 5.4% |
+| 8 | CCSP | ISC2 | 435 | 3.8% |
+| 9 | CompTIA CySA+ | CompTIA | 327 | 2.8% |
+| 10 | AWS Certified Security | AWS | 315 | 2.7% |
+| 11 | CRISC | ISACA | 267 | 2.3% |
+| 12 | CompTIA CASP+ / SecurityX | CompTIA | 264 | 2.3% |
 
-Default sources: `workday`, `greenhouse`.
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif">
 
-## Requirements
+## 1. CISSP
 
-Either Elixir 1.18+ on your machine, or Docker. The Justfile uses your local
-`mix` if it is installed and otherwise runs everything inside the official
-`elixir` Docker image, so a fresh clone needs nothing but Docker.
+<img src="output/assets/cissp.png" alt="CISSP" height="84">
 
-## Usage
+**2,199** of 11,511 cybersecurity postings — **19.1%**
 
-```sh
-just setup        # install deps and compile (run once)
-just test         # run the test suite
-just run          # scrape with defaults (workday + greenhouse)
-just demo         # fast greenhouse-only run
-just build        # build the standalone ./certscout escript
-```
+`████████████████████████████████`
 
-Pass options straight through:
+> Issuer: ISC2
 
-```sh
-just run --sources greenhouse,workday --target 8000 --top 10
-just run --sources greenhouse --output reports/run1
-```
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif">
 
-### Options
+## 2. GIAC
 
-```
---sources a,b,c     Sources to scrape
---terms "x,y"       Search terms for keyword sources
---target N | all    Cap on cybersecurity postings to analyze (default 12000)
---top N             Number of certifications in the report (default 12)
---concurrency N     Max concurrent requests (default 24)
---delay MS          Max jitter delay per request in ms (default 25)
---output DIR        Output directory (default output)
---all               Analyze every posting, skip the cybersecurity filter
---country CC        Country code for Adzuna (default us)
---boards-file F     Override Greenhouse board tokens (one per line)
---workday-file F    Override Workday sites (lines: tenant,datacenter,site)
---lever-file F      Override Lever companies (one per line)
---ashby-file F      Override Ashby orgs (one per line)
---certs-file F      Override certification catalogue (JSON array)
-```
+<img src="output/assets/giac.svg" alt="GIAC" height="84">
 
-## Output
+**1,194** of 11,511 cybersecurity postings — **10.4%**
 
-```
-output/
-  REPORT.md                 ranked report with logos, counts, and shares
-  data/
-    certifications.csv      rank, certification, issuer, postings, percent
-    certifications.json     same ranking as JSON
-    postings.json           analyzed cybersecurity postings + matched certs
-    postings.csv            same postings as CSV
-    summary.json            run metadata and the top certifications
-  assets/                   downloaded certification logos
-```
+`█████████████████░░░░░░░░░░░░░░░`
 
-## Customizing
+> Issuer: GIAC
 
-The certification catalogue lives in `lib/cert_scout/certifications.ex`. To scan
-for a different set without editing code, pass `--certs-file` a JSON array of
-`{slug, name, issuer, aliases, logo}` objects. To point a source at different
-companies, use the `--*-file` overrides.
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif">
 
-## Notes on conduct
+## 3. CISM
 
-CertScout only calls documented public hiring APIs, sends a descriptive
-user-agent, limits concurrency, jitters requests, and backs off on HTTP 429. It
-does not attempt to defeat anti-bot protections. Respect each site's terms of
-service and robots policy before pointing it somewhere new.
+<img src="output/assets/cism.png" alt="CISM" height="84">
+
+**951** of 11,511 cybersecurity postings — **8.3%**
+
+`██████████████░░░░░░░░░░░░░░░░░░`
+
+> Issuer: ISACA
+
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif">
+
+## 4. CompTIA Security+
+
+<img src="output/assets/security-plus.png" alt="CompTIA Security+" height="84">
+
+**882** of 11,511 cybersecurity postings — **7.7%**
+
+`█████████████░░░░░░░░░░░░░░░░░░░`
+
+> Issuer: CompTIA
+
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif">
+
+## 5. OSCP
+
+<img src="output/assets/oscp.svg" alt="OSCP" height="84">
+
+**723** of 11,511 cybersecurity postings — **6.3%**
+
+`███████████░░░░░░░░░░░░░░░░░░░░░`
+
+> Issuer: OffSec
+
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif">
+
+## 6. CISA
+
+<img src="output/assets/cisa.png" alt="CISA" height="84">
+
+**669** of 11,511 cybersecurity postings — **5.8%**
+
+`██████████░░░░░░░░░░░░░░░░░░░░░░`
+
+> Issuer: ISACA
+
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif">
+
+## 7. CEH
+
+<img src="output/assets/ceh.png" alt="CEH" height="84">
+
+**618** of 11,511 cybersecurity postings — **5.4%**
+
+`█████████░░░░░░░░░░░░░░░░░░░░░░░`
+
+> Issuer: EC-Council
+
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif">
+
+
+## 8. CCSP
+
+<img src="output/assets/ccsp.png" alt="CCSP" height="84">
+
+**435** of 11,511 cybersecurity postings — **3.8%**
+
+`██████░░░░░░░░░░░░░░░░░░░░░░░░░░`
+
+> Issuer: ISC2
+
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif">
+
+## 9. CompTIA CySA+
+
+<img src="output/assets/cysa-plus.png" alt="CompTIA CySA+" height="84">
+
+**327** of 11,511 cybersecurity postings — **2.8%**
+
+`█████░░░░░░░░░░░░░░░░░░░░░░░░░░░`
+
+> Issuer: CompTIA
+
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif">
+
+## 10. AWS Certified Security
+
+<img src="output/assets/aws-security.png" alt="AWS Certified Security" height="84">
+
+**315** of 11,511 cybersecurity postings — **2.7%**
+
+`█████░░░░░░░░░░░░░░░░░░░░░░░░░░░`
+
+> Issuer: AWS
+
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif">
+
+## 11. CRISC
+
+<img src="output/assets/crisc.png" alt="CRISC" height="84">
+
+**267** of 11,511 cybersecurity postings — **2.3%**
+
+`████░░░░░░░░░░░░░░░░░░░░░░░░░░░░`
+
+> Issuer: ISACA
+
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif">
+
+
+## 12. CompTIA CASP+ / SecurityX
+
+<img src="output/assets/casp-plus.png" alt="CompTIA CASP+ / SecurityX" height="84">
+
+**264** of 11,511 cybersecurity postings — **2.3%**
+
+`████░░░░░░░░░░░░░░░░░░░░░░░░░░░░`
+
+> Issuer: CompTIA
+
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif">
+
+
+# Comment "REPO" and I'll send you the link to this scraper
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif">

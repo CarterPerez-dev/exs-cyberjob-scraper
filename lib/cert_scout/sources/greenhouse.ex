@@ -3,15 +3,17 @@
 
 defmodule CertScout.Sources.Greenhouse do
   @moduledoc """
-  Greenhouse public job boards. `?content=true` returns every posting for a
-  company board, with the full HTML description, in a single request, so one HTTP
-  call yields hundreds of postings. The bundled board list is hand-verified to
-  return jobs; override it with `--boards-file`.
+  Greenhouse public job boards. Two-phase so it scales to thousands of boards
+  without downloading every description: list a board's jobs (titles only),
+  isolate the cybersecurity titles, then fetch the full description only for
+  those. The bundled board list is hand-verified; override it with `--boards-file`
+  (one token per line) to point at the full ATS company set.
   """
 
   @behaviour CertScout.Source
 
   alias CertScout.Config
+  alias CertScout.Cyber
   alias CertScout.Fetcher
   alias CertScout.Html
   alias CertScout.HTTP
@@ -25,7 +27,8 @@ defmodule CertScout.Sources.Greenhouse do
     scopely peloton oscar glossier calendly webflow mixpanel amplitude launchdarkly
     postman bugcrowd veracode abnormalsecurity yubico expel huntress dragos axonius
     chainguard fivetran clickhouse cockroachlabs planetscale adyen gocardless nuro
-    waymo verkada checkr
+    waymo verkada checkr cribl tines sumologic recordedfuture tailscale vercel
+    fastly starburst mercury monzo nubank
   )
 
   @impl true
@@ -34,19 +37,35 @@ defmodule CertScout.Sources.Greenhouse do
   @impl true
   def collect(%Config{} = config) do
     boards = config.boards || @boards
-    Fetcher.run(boards, "greenhouse", config, &fetch_board(&1, config))
+    Fetcher.collect(boards, "greenhouse", config, &fetch_board(&1, config))
   end
 
   defp fetch_board(token, config) do
-    url = "https://boards-api.greenhouse.io/v1/boards/#{token}/jobs?content=true"
+    case HTTP.get_json("https://boards-api.greenhouse.io/v1/boards/#{token}/jobs", config) do
+      {:ok, %{"jobs" => jobs}} when is_list(jobs) ->
+        postings =
+          jobs
+          |> Enum.filter(&keep?(&1["title"], config))
+          |> Enum.map(&detail(&1, token, config))
+          |> Enum.reject(&is_nil/1)
 
-    case HTTP.get_json(url, config) do
-      {:ok, %{"jobs" => jobs}} when is_list(jobs) -> Enum.map(jobs, &posting(&1, token))
-      _ -> []
+        %{scanned: length(jobs), postings: postings}
+
+      _ ->
+        %{scanned: 0, postings: []}
     end
   end
 
-  defp posting(job, token) do
+  defp detail(job, token, config) do
+    url = "https://boards-api.greenhouse.io/v1/boards/#{token}/jobs/#{job["id"]}"
+
+    case HTTP.get_json(url, config) do
+      {:ok, %{"content" => content} = full} -> posting(full, content, token)
+      _ -> posting(job, "", token)
+    end
+  end
+
+  defp posting(job, content, token) do
     %Posting{
       id: "greenhouse:#{token}:#{job["id"]}",
       source: "greenhouse",
@@ -54,7 +73,11 @@ defmodule CertScout.Sources.Greenhouse do
       title: job["title"] || "",
       location: get_in(job, ["location", "name"]),
       url: job["absolute_url"],
-      text: Html.to_text(job["content"])
+      text: Html.to_text(content)
     }
   end
+
+  defp keep?(title, %Config{include_all: true}) when is_binary(title), do: title != ""
+  defp keep?(title, _config) when is_binary(title), do: Cyber.match?(title)
+  defp keep?(_title, _config), do: false
 end

@@ -11,6 +11,7 @@ defmodule CertScout.Sources.Ashby do
   @behaviour CertScout.Source
 
   alias CertScout.Config
+  alias CertScout.Cyber
   alias CertScout.Fetcher
   alias CertScout.Html
   alias CertScout.HTTP
@@ -24,17 +25,29 @@ defmodule CertScout.Sources.Ashby do
   @impl true
   def collect(%Config{} = config) do
     orgs = config.ashby_orgs || @orgs
-    Fetcher.run(orgs, "ashby", config, &fetch_org(&1, config))
+    Fetcher.collect(orgs, "ashby", config, &fetch_org(&1, config))
   end
 
   defp fetch_org(org, config) do
     url = "https://api.ashbyhq.com/posting-api/job-board/#{org}?includeCompensation=false"
 
     case HTTP.get_json(url, config) do
-      {:ok, %{"jobs" => jobs}} when is_list(jobs) -> Enum.map(jobs, &posting(&1, org))
-      _ -> []
+      {:ok, %{"jobs" => jobs}} when is_list(jobs) ->
+        postings =
+          jobs
+          |> Enum.filter(&keep?(&1["title"], config))
+          |> Enum.map(&posting(&1, org))
+
+        %{scanned: length(jobs), postings: postings}
+
+      _ ->
+        %{scanned: 0, postings: []}
     end
   end
+
+  defp keep?(title, %Config{include_all: true}) when is_binary(title), do: title != ""
+  defp keep?(title, _config) when is_binary(title), do: Cyber.match?(title)
+  defp keep?(_title, _config), do: false
 
   defp posting(job, org) do
     %Posting{

@@ -37,7 +37,11 @@ defmodule CertScout.Sources.Workday do
     %{tenant: "workday", dc: "wd5", site: "Workday"},
     %{tenant: "comcast", dc: "wd5", site: "Comcast_Careers"},
     %{tenant: "humana", dc: "wd5", site: "Humana_External_Career_Site"},
-    %{tenant: "tmobile", dc: "wd1", site: "External"}
+    %{tenant: "tmobile", dc: "wd1", site: "External"},
+    %{tenant: "pnc", dc: "wd5", site: "External"},
+    %{tenant: "travelers", dc: "wd5", site: "External"},
+    %{tenant: "autodesk", dc: "wd1", site: "Ext"},
+    %{tenant: "bmo", dc: "wd3", site: "External"}
   ]
 
   @impl true
@@ -49,15 +53,23 @@ defmodule CertScout.Sources.Workday do
 
     for_result = for(site <- sites, term <- config.search_terms, do: {site, term})
 
-    refs =
+    scanned =
       for_result
       |> Fetcher.run("workday search", config, &search(&1, config))
       |> Enum.uniq_by(& &1.url)
-      |> Enum.filter(&Cyber.match?(&1.title))
+
+    refs =
+      scanned
+      |> Enum.filter(&keep?(&1.title, config))
       |> Enum.take(config.per_source_cap)
 
-    Fetcher.run(refs, "workday detail", config, &detail(&1, config))
+    postings = Fetcher.run(refs, "workday detail", config, &detail(&1, config))
+    %{scanned: length(scanned), postings: postings}
   end
+
+  defp keep?(title, %Config{include_all: true}) when is_binary(title), do: title != ""
+  defp keep?(title, _config) when is_binary(title), do: Cyber.match?(title)
+  defp keep?(_title, _config), do: false
 
   defp search({site, term}, config) do
     base = base_url(site)

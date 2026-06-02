@@ -31,11 +31,11 @@ defmodule CertScout.Report do
     """
     # Cybersecurity Certification Demand
 
-    ### #{number(meta.total_scraped)} job postings scanned across #{meta.companies} employers on #{Date.to_iso8601(meta.generated_on)}
+    ### #{number(meta.total_scraped)} job postings scanned on #{Date.to_iso8601(meta.generated_on)}
 
-    Of those, **#{number(total)}** were isolated as cybersecurity roles. Every number below is
-    the real count of postings whose full text names the certification. Data sources:
-    #{Enum.join(meta.sources, ", ")}.
+    From those, **#{number(total)}** were isolated as cybersecurity roles across #{number(meta.companies)} employers.
+    Every number below is the real count of postings whose full text names the certification.
+    Data sources: #{Enum.join(meta.sources, ", ")}.
 
     ---
     """

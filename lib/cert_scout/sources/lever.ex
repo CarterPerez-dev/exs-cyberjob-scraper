@@ -11,6 +11,7 @@ defmodule CertScout.Sources.Lever do
   @behaviour CertScout.Source
 
   alias CertScout.Config
+  alias CertScout.Cyber
   alias CertScout.Fetcher
   alias CertScout.Html
   alias CertScout.HTTP
@@ -24,17 +25,29 @@ defmodule CertScout.Sources.Lever do
   @impl true
   def collect(%Config{} = config) do
     companies = config.lever_companies || @companies
-    Fetcher.run(companies, "lever", config, &fetch_company(&1, config))
+    Fetcher.collect(companies, "lever", config, &fetch_company(&1, config))
   end
 
   defp fetch_company(company, config) do
     url = "https://api.lever.co/v0/postings/#{company}?mode=json"
 
     case HTTP.get_json(url, config) do
-      {:ok, postings} when is_list(postings) -> Enum.map(postings, &posting(&1, company))
-      _ -> []
+      {:ok, jobs} when is_list(jobs) ->
+        postings =
+          jobs
+          |> Enum.filter(&keep?(&1["text"], config))
+          |> Enum.map(&posting(&1, company))
+
+        %{scanned: length(jobs), postings: postings}
+
+      _ ->
+        %{scanned: 0, postings: []}
     end
   end
+
+  defp keep?(title, %Config{include_all: true}) when is_binary(title), do: title != ""
+  defp keep?(title, _config) when is_binary(title), do: Cyber.match?(title)
+  defp keep?(_title, _config), do: false
 
   defp posting(job, company) do
     %Posting{
