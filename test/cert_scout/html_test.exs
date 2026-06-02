@@ -19,6 +19,10 @@ defmodule CertScout.HtmlTest do
     assert Html.to_text("Caf&#233; &#x26; co") == "Café & co"
   end
 
+  test "drops invalid surrogate code points instead of raising" do
+    assert Html.to_text("alpha &#xD800; omega") == "alpha omega"
+  end
+
   test "handles nil and empty input" do
     assert Html.to_text(nil) == ""
     assert Html.to_text("") == ""

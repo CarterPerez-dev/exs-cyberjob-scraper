@@ -60,16 +60,12 @@ defmodule CertScout.Sources.Workday do
 
     refs =
       scanned
-      |> Enum.filter(&keep?(&1.title, config))
+      |> Enum.filter(&Cyber.keep?(&1.title, config))
       |> Enum.take(config.per_source_cap)
 
     postings = Fetcher.run(refs, "workday detail", config, &detail(&1, config))
     %{scanned: length(scanned), postings: postings}
   end
-
-  defp keep?(title, %Config{include_all: true}) when is_binary(title), do: title != ""
-  defp keep?(title, _config) when is_binary(title), do: Cyber.match?(title)
-  defp keep?(_title, _config), do: false
 
   defp search({site, term}, config) do
     base = base_url(site)

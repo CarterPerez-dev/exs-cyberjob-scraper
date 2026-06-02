@@ -26,7 +26,7 @@ defmodule CertScout.Sources.RemoteOK do
       {:ok, [_legal | jobs]} when is_list(jobs) ->
         postings =
           jobs
-          |> Enum.filter(&keep?(&1["position"], config))
+          |> Enum.filter(&Cyber.keep?(&1["position"], config))
           |> Enum.map(&posting/1)
 
         Log.progress_done("remoteok", length(postings))
@@ -37,10 +37,6 @@ defmodule CertScout.Sources.RemoteOK do
         %{scanned: 0, postings: []}
     end
   end
-
-  defp keep?(title, %Config{include_all: true}) when is_binary(title), do: title != ""
-  defp keep?(title, _config) when is_binary(title), do: Cyber.match?(title)
-  defp keep?(_title, _config), do: false
 
   defp posting(job) do
     %Posting{

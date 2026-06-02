@@ -34,11 +34,16 @@ defmodule CertScout.Certifications do
     ],
     [slug: "cysa-plus", name: "CompTIA CySA+", issuer: "CompTIA", aliases: ["CySA+", "CySA"]],
     [slug: "ccsp", name: "CCSP", issuer: "ISC2", aliases: ["CCSP"]],
+    [slug: "gsec", name: "GIAC GSEC", issuer: "GIAC", aliases: ["GSEC"]],
+    [slug: "gcih", name: "GIAC GCIH", issuer: "GIAC", aliases: ["GCIH"]],
+    [slug: "gpen", name: "GIAC GPEN", issuer: "GIAC", aliases: ["GPEN"]],
+    [slug: "gcia", name: "GIAC GCIA", issuer: "GIAC", aliases: ["GCIA"]],
+    [slug: "grem", name: "GIAC GREM", issuer: "GIAC", aliases: ["GREM"]],
     [
       slug: "giac",
-      name: "GIAC",
+      name: "GIAC (other)",
       issuer: "GIAC",
-      aliases: ["GIAC", "GSEC", "GCIH", "GPEN", "GCIA", "GCFA", "GWAPT", "GREM", "GMON", "GCFE"]
+      aliases: ["GIAC", "GCFA", "GWAPT", "GMON", "GCFE", "GCFR", "GDSA", "GXPN"]
     ],
     [slug: "casp-plus", name: "CompTIA CASP+ / SecurityX", issuer: "CompTIA", aliases: ["CASP+", "CASP", "SecurityX"]],
     [slug: "pentest-plus", name: "CompTIA PenTest+", issuer: "CompTIA", aliases: ["PenTest+"]],
@@ -60,6 +65,51 @@ defmodule CertScout.Certifications do
       aliases: ["AZ-500", "Azure Security Engineer"]
     ],
     [slug: "comptia-a-plus", name: "CompTIA A+", issuer: "CompTIA", aliases: ["CompTIA A+"]],
+    [
+      slug: "sc-200",
+      name: "Microsoft SC-200 (Security Operations Analyst)",
+      issuer: "Microsoft",
+      aliases: ["SC-200", "Security Operations Analyst Associate"]
+    ],
+    [
+      slug: "sc-300",
+      name: "Microsoft SC-300 (Identity & Access Administrator)",
+      issuer: "Microsoft",
+      aliases: ["SC-300", "Identity and Access Administrator Associate"]
+    ],
+    [
+      slug: "sc-100",
+      name: "Microsoft SC-100 (Cybersecurity Architect)",
+      issuer: "Microsoft",
+      aliases: ["SC-100", "Cybersecurity Architect Expert"]
+    ],
+    [
+      slug: "gcp-security",
+      name: "Google Professional Cloud Security Engineer",
+      issuer: "Google",
+      aliases: ["Professional Cloud Security Engineer", "GCP Security Engineer"]
+    ],
+    [slug: "pcnse", name: "Palo Alto PCNSE", issuer: "Palo Alto Networks", aliases: ["PCNSE"]],
+    [
+      slug: "fortinet-nse",
+      name: "Fortinet NSE / FCSS",
+      issuer: "Fortinet",
+      aliases: ["Fortinet NSE", "FCSS", "FCP", "NSE 4", "NSE 7", "NSE 8"]
+    ],
+    [
+      slug: "splunk",
+      name: "Splunk Certified",
+      issuer: "Splunk",
+      aliases: ["Splunk Certified", "Splunk Core Certified", "Splunk Enterprise Security Certified"]
+    ],
+    [
+      slug: "cbrops",
+      name: "Cisco CyberOps Associate",
+      issuer: "Cisco",
+      aliases: ["CyberOps", "CBROPS", "Cisco CyberOps"]
+    ],
+    [slug: "osep", name: "OSEP", issuer: "OffSec", aliases: ["OSEP"]],
+    [slug: "oswe", name: "OSWE", issuer: "OffSec", aliases: ["OSWE"]],
     [slug: "pmp", name: "PMP", issuer: "PMI", aliases: ["PMP"]]
   ]
 

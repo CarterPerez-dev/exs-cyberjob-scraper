@@ -7,7 +7,13 @@ defmodule CertScout.Fetcher do
   `Task.async_stream`, capped at `max_concurrency` for back-pressure, killing any
   task that exceeds the timeout so a single hung host cannot stall the run. The
   worker returns a list of postings; failures collapse to an empty list and are
-  counted, never raised. Progress is reported live as postings accumulate.
+  counted, never raised. Progress is reported live as results accumulate.
+
+  Two entry points share one engine: `collect/4` is for workers that also report
+  how many raw items they scanned (the `%{scanned, postings}` contract), `run/4`
+  is for workers that only return a posting list and let the caller tally what
+  "scanned" means. The stream is consumed by a single process, so a plain reduce
+  accumulator is the right tool — no atomics needed.
   """
 
   alias CertScout.Config
@@ -18,57 +24,38 @@ defmodule CertScout.Fetcher do
   def collect([], _label, _config, _worker), do: %{scanned: 0, postings: []}
 
   def collect(items, label, %Config{} = config, worker) do
-    total = length(items)
-    counter = :counters.new(3, [])
-
-    postings =
-      items
-      |> Task.async_stream(fn item -> safe_map(worker, item) end,
-        max_concurrency: config.max_concurrency,
-        timeout: config.timeout_ms + 15_000,
-        on_timeout: :kill_task,
-        ordered: false
-      )
-      |> Enum.flat_map(fn outcome ->
-        %{scanned: scanned, postings: postings} = unwrap_map(outcome)
-        :counters.add(counter, 1, 1)
-        :counters.add(counter, 2, length(postings))
-        :counters.add(counter, 3, scanned)
-        Log.progress(label, :counters.get(counter, 1), total)
-        postings
-      end)
-
-    scanned = :counters.get(counter, 3)
-    Log.progress_done(label, :counters.get(counter, 2))
-    %{scanned: scanned, postings: postings}
+    stream(items, label, config, fn item -> safe_map(worker, item) end)
   end
 
   @spec run([term()], String.t(), Config.t(), (term() -> [term()])) :: [term()]
   def run([], _label, _config, _worker), do: []
 
   def run(items, label, %Config{} = config, worker) do
-    total = length(items)
-    counter = :counters.new(2, [])
+    %{postings: postings} = stream(items, label, config, fn item -> %{scanned: 0, postings: safe(worker, item)} end)
+    postings
+  end
 
-    results =
+  defp stream(items, label, %Config{} = config, worker) do
+    total = length(items)
+
+    {_done, scanned, chunks} =
       items
-      |> Task.async_stream(
-        fn item -> safe(worker, item) end,
+      |> Task.async_stream(worker,
         max_concurrency: config.max_concurrency,
         timeout: config.timeout_ms + 15_000,
         on_timeout: :kill_task,
         ordered: false
       )
-      |> Enum.flat_map(fn outcome ->
-        postings = unwrap(outcome)
-        :counters.add(counter, 1, 1)
-        :counters.add(counter, 2, length(postings))
-        Log.progress(label, :counters.get(counter, 1), total)
-        postings
+      |> Enum.reduce({0, 0, []}, fn outcome, {done, scanned, chunks} ->
+        %{scanned: s, postings: p} = unwrap(outcome)
+        done = done + 1
+        Log.progress(label, done, total)
+        {done, scanned + s, [p | chunks]}
       end)
 
-    Log.progress_done(label, :counters.get(counter, 2))
-    results
+    postings = chunks |> Enum.reverse() |> Enum.concat()
+    Log.progress_done(label, length(postings))
+    %{scanned: scanned, postings: postings}
   end
 
   defp safe(worker, item) do
@@ -93,9 +80,6 @@ defmodule CertScout.Fetcher do
     _, _ -> %{scanned: 0, postings: []}
   end
 
-  defp unwrap({:ok, postings}) when is_list(postings), do: postings
-  defp unwrap(_), do: []
-
-  defp unwrap_map({:ok, %{scanned: _, postings: _} = result}), do: result
-  defp unwrap_map(_), do: %{scanned: 0, postings: []}
+  defp unwrap({:ok, %{scanned: _, postings: _} = result}), do: result
+  defp unwrap(_), do: %{scanned: 0, postings: []}
 end

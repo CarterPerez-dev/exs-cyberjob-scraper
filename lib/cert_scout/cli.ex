@@ -95,7 +95,17 @@ defmodule CertScout.CLI do
 
   defp parse_target(nil), do: nil
   defp parse_target("all"), do: :all
-  defp parse_target(string), do: String.to_integer(string)
+
+  defp parse_target(string) do
+    case Integer.parse(string) do
+      {n, ""} when n > 0 ->
+        n
+
+      _ ->
+        IO.puts(:stderr, "  -> ignoring invalid --target #{inspect(string)}; using default")
+        nil
+    end
+  end
 
   defp read_lines(nil), do: nil
 
@@ -112,9 +122,15 @@ defmodule CertScout.CLI do
   defp read_workday(path) do
     path
     |> read_lines()
-    |> Enum.map(fn line ->
-      [tenant, dc, site] = line |> String.split(",") |> Enum.map(&String.trim/1)
-      %{tenant: tenant, dc: dc, site: site}
+    |> Enum.flat_map(fn line ->
+      case line |> String.split(",") |> Enum.map(&String.trim/1) do
+        [tenant, dc, site] ->
+          [%{tenant: tenant, dc: dc, site: site}]
+
+        _ ->
+          IO.puts(:stderr, "  -> skipping malformed workday line (need tenant,dc,site): #{line}")
+          []
+      end
     end)
   end
 

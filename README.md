@@ -1,6 +1,11 @@
 <!-- © AngelaMos | 2026 -->
 <!-- README.md -->
 
+> ## Want to run this yourself?
+> **This page is the showcase. The setup guide lives in [`README2.md`](README2.md).**
+> On a fresh Linux box it's two commands: `./install.sh` then `./certscout --sources greenhouse`.
+> The installer pulls in **everything** you need (Erlang, Elixir, deps) and builds the binary for you.
+
 ```json
 ████████╗ ██████╗ ██████╗     ███████╗     ██████╗███████╗██████╗ ████████╗███████╗
 ╚══██╔══╝██╔═══██╗██╔══██╗    ██╔════╝    ██╔════╝██╔════╝██╔══██╗╚══██╔══╝██╔════╝

@@ -15,17 +15,20 @@ defmodule CertScout.Sources.Ashby do
   alias CertScout.Fetcher
   alias CertScout.Html
   alias CertScout.HTTP
+  alias CertScout.Log
   alias CertScout.Posting
-
-  @orgs ~w()
 
   @impl true
   def label, do: "ashby"
 
   @impl true
+  def collect(%Config{ashby_orgs: nil}) do
+    Log.step("ashby: no orgs configured; pass --ashby-file lists/ashby_orgs.txt (one org per line)")
+    %{scanned: 0, postings: []}
+  end
+
   def collect(%Config{} = config) do
-    orgs = config.ashby_orgs || @orgs
-    Fetcher.collect(orgs, "ashby", config, &fetch_org(&1, config))
+    Fetcher.collect(config.ashby_orgs, "ashby", config, &fetch_org(&1, config))
   end
 
   defp fetch_org(org, config) do
@@ -35,7 +38,7 @@ defmodule CertScout.Sources.Ashby do
       {:ok, %{"jobs" => jobs}} when is_list(jobs) ->
         postings =
           jobs
-          |> Enum.filter(&keep?(&1["title"], config))
+          |> Enum.filter(&Cyber.keep?(&1["title"], config))
           |> Enum.map(&posting(&1, org))
 
         %{scanned: length(jobs), postings: postings}
@@ -44,10 +47,6 @@ defmodule CertScout.Sources.Ashby do
         %{scanned: 0, postings: []}
     end
   end
-
-  defp keep?(title, %Config{include_all: true}) when is_binary(title), do: title != ""
-  defp keep?(title, _config) when is_binary(title), do: Cyber.match?(title)
-  defp keep?(_title, _config), do: false
 
   defp posting(job, org) do
     %Posting{

@@ -42,4 +42,14 @@ defmodule CertScout.AnalyzerTest do
     %{total: 0, results: results} = Analyzer.analyze([], certs())
     assert Enum.all?(results, &(&1.count == 0 and &1.percent == 0.0))
   end
+
+  test "exposes the per-posting matches so they are computed exactly once" do
+    postings = [posting("Must hold CISSP and Security+"), posting("nothing relevant")]
+
+    %{matched: matched} = Analyzer.analyze(postings, certs())
+
+    by_text = Map.new(matched, &{&1.posting.text, Enum.sort(&1.slugs)})
+    assert by_text["Must hold CISSP and Security+"] == ["cissp", "secplus"]
+    assert by_text["nothing relevant"] == []
+  end
 end

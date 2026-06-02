@@ -5,28 +5,27 @@ defmodule CertScout.Storage do
   @moduledoc """
   Writes the raw artifacts to `<output>/data`: the analyzed postings (JSON + CSV),
   the certification tally (JSON + CSV), and a run summary. JSON is encoded with the
-  built-in `JSON` module; CSV with NimbleCSV.
+  built-in `JSON` module; CSV with NimbleCSV. Per-posting matches come straight
+  from the analysis, so the matching never runs a second time here.
   """
 
-  alias CertScout.Certification
   alias CertScout.CSV
-  alias CertScout.Posting
 
   NimbleCSV.define(CSV, separator: ",", escape: "\"")
 
-  @spec write(String.t(), [Posting.t()], map(), [Certification.t()], map()) :: :ok
-  def write(output_dir, postings, analysis, certs, meta) do
+  @spec write(String.t(), CertScout.Analyzer.analysis(), map()) :: :ok
+  def write(output_dir, analysis, meta) do
     data_dir = Path.join(output_dir, "data")
     File.mkdir_p!(data_dir)
 
-    write_postings(data_dir, postings, certs)
+    write_postings(data_dir, analysis.matched)
     write_certifications(data_dir, analysis)
     write_summary(data_dir, analysis, meta)
     :ok
   end
 
-  defp write_postings(dir, postings, certs) do
-    rows = Enum.map(postings, &posting_map(&1, certs))
+  defp write_postings(dir, matched) do
+    rows = Enum.map(matched, &posting_map/1)
 
     File.write!(Path.join(dir, "postings.json"), JSON.encode!(rows))
 
@@ -83,7 +82,7 @@ defmodule CertScout.Storage do
     File.write!(Path.join(dir, "summary.json"), JSON.encode!(summary))
   end
 
-  defp posting_map(%Posting{} = p, certs) do
+  defp posting_map(%{posting: p, slugs: slugs}) do
     %{
       id: p.id,
       source: p.source,
@@ -91,7 +90,7 @@ defmodule CertScout.Storage do
       title: p.title,
       location: p.location,
       url: p.url,
-      matched_certs: for(c <- certs, Certification.mentioned?(c, p.text), do: c.slug)
+      matched_certs: slugs
     }
   end
 end
