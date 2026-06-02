@@ -22,7 +22,7 @@ nothing is fabricated.**
 ## TL;DR — bare Linux box to first scan
 
 ```sh
-git clone <your-repo-url> certscout
+git clone https://github.com/CarterPerez-dev/exs-cyberjob-scrape exs-cyberjob-scraper
 cd certscout
 ./install.sh                       # installs Erlang + Elixir + deps, builds the binary
 ./certscout --sources greenhouse   # your first scan, no API keys, ~1 minute
