@@ -22,7 +22,7 @@ defmodule CertScout.Report do
     max = top |> List.first(%{count: 0}) |> Map.fetch!(:count)
 
     content =
-      Enum.join([header(total, meta), table(top, total), sections(top, total, max, assets_dir), footer(meta)], "\n")
+      Enum.join([header(total, meta), table(top), sections(top, total, max, assets_dir), footer(meta)], "\n")
 
     File.write!(Path.join(output_dir, "REPORT.md"), content)
   end
@@ -41,12 +41,12 @@ defmodule CertScout.Report do
     """
   end
 
-  defp table(top, total) do
+  defp table(top) do
     rows =
       top
       |> Enum.with_index(1)
       |> Enum.map_join("\n", fn {r, rank} ->
-        "| #{rank} | #{r.cert.name} | #{r.cert.issuer} | #{number(r.count)} | #{share(r.count, total)}% |"
+        "| #{rank} | #{r.cert.name} | #{r.cert.issuer} | #{number(r.count)} | #{r.percent}% |"
       end)
 
     """
@@ -67,7 +67,7 @@ defmodule CertScout.Report do
   end
 
   defp section(r, rank, total, max, assets_dir) do
-    pct = share(r.count, total)
+    pct = r.percent
 
     """
     ## #{rank}. #{r.cert.name}
@@ -108,9 +108,6 @@ defmodule CertScout.Report do
     filled = round(count / max * @bar_width)
     String.duplicate(@filled, filled) <> String.duplicate(@empty, @bar_width - filled)
   end
-
-  defp share(_count, 0), do: 0.0
-  defp share(count, total), do: Float.round(count / total * 100, 1)
 
   defp number(n) do
     n

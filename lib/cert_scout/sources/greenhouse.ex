@@ -45,7 +45,7 @@ defmodule CertScout.Sources.Greenhouse do
       {:ok, %{"jobs" => jobs}} when is_list(jobs) ->
         postings =
           jobs
-          |> Enum.filter(&keep?(&1["title"], config))
+          |> Enum.filter(&Cyber.keep?(&1["title"], config))
           |> Enum.map(&detail(&1, token, config))
           |> Enum.reject(&is_nil/1)
 
@@ -76,8 +76,4 @@ defmodule CertScout.Sources.Greenhouse do
       text: Html.to_text(content)
     }
   end
-
-  defp keep?(title, %Config{include_all: true}) when is_binary(title), do: title != ""
-  defp keep?(title, _config) when is_binary(title), do: Cyber.match?(title)
-  defp keep?(_title, _config), do: false
 end

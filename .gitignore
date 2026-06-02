@@ -1,3 +1,6 @@
+# Development-only docs (audit plans etc.) — never committed to the public repo.
+/docs/
+
 # The directory Mix will write compiled artifacts to.
 /_build/
 

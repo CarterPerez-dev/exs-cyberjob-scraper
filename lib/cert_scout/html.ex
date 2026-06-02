@@ -66,7 +66,7 @@ defmodule CertScout.Html do
     end)
   end
 
-  defp safe_codepoint(n) when n in 0..0x10FFFF, do: <<n::utf8>>
+  defp safe_codepoint(n) when n in 0..0xD7FF or n in 0xE000..0x10FFFF, do: <<n::utf8>>
   defp safe_codepoint(_), do: ""
 
   defp replace_named_entities(string) do

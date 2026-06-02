@@ -10,6 +10,7 @@ defmodule CertScout do
 
   alias CertScout.Analyzer
   alias CertScout.Config
+  alias CertScout.Cyber
   alias CertScout.Log
   alias CertScout.Logos
   alias CertScout.Posting
@@ -30,6 +31,7 @@ defmodule CertScout do
     cyber =
       postings
       |> Enum.uniq_by(&Posting.dedup_key/1)
+      |> Enum.filter(&Cyber.keep?(&1.title, config))
       |> cap(config.target)
 
     Log.info("Scanned #{scanned} postings | #{length(cyber)} cybersecurity roles | analyzing certifications")
@@ -37,7 +39,7 @@ defmodule CertScout do
     analysis = Analyzer.analyze(cyber, config.certs)
     meta = meta(scanned, cyber, config)
 
-    persist(config, cyber, analysis, meta)
+    persist(config, analysis, meta)
     summarize(analysis, meta)
   end
 
@@ -75,14 +77,14 @@ defmodule CertScout do
     }
   end
 
-  defp persist(config, cyber, analysis, meta) do
+  defp persist(config, analysis, meta) do
     File.mkdir_p!(config.output_dir)
     top_certs = analysis.results |> Enum.take(config.top_n) |> Enum.map(& &1.cert)
 
     Log.info("Downloading #{length(top_certs)} certification logos")
     Logos.download_all(top_certs, Path.join(config.output_dir, "assets"), config)
 
-    Storage.write(config.output_dir, cyber, analysis, config.certs, meta)
+    Storage.write(config.output_dir, analysis, meta)
     Report.write(config.output_dir, analysis, meta)
     Log.info("Wrote #{config.output_dir}/REPORT.md and #{config.output_dir}/data/")
   end

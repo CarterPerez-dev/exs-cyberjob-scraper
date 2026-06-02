@@ -1,67 +1,114 @@
----------------
-# CertScout
+<!-- © AngelaMos | 2026 -->
+<!-- README2.md -->
+
+```
+   ____          _   ____                  _
+  / ___|___ _ __| |_/ ___|  ___ ___  _   _| |_
+ | |   / _ \ '__| __\___ \ / __/ _ \| | | | __|
+ | |__|  __/ |  | |_ ___) | (_| (_) | |_| | |_
+  \____\___|_|   \__|____/ \___\___/ \__,_|\__|
+
+   cybersecurity certification demand scanner
+```
 
 A command-line web scraper, written in Elixir, that pulls cybersecurity job
 postings from public hiring APIs, isolates the genuine cybersecurity roles, and
-reports which certifications employers ask for most. It produces a clean
-Markdown report and raw JSON/CSV data. Every number it prints is the real count
-it pulled; nothing is fabricated.
+reports which certifications employers ask for most. It writes a clean Markdown
+report plus raw JSON/CSV. **Every number it prints is the real count it pulled —
+nothing is fabricated.**
 
-## What it does
+---
 
-1. Fetches job postings from one or more pluggable sources (concurrently, with
-   polite rate limiting and backoff).
-2. Deduplicates them and isolates the cybersecurity subset with a precise
-   title/role classifier.
-3. Scans each posting's full text for a configurable list of certifications.
-4. Ranks the certifications by how many postings mention them and computes each
-   one's share of cybersecurity postings.
-5. Writes raw data to `output/data/` (JSON + CSV) and a report to
-   `output/REPORT.md`, with each top certification's real logo embedded.
-
-## Sources
-
-Sources are pluggable. The defaults need no keys.
-
-| Source | Auth | Notes |
-|--------|------|-------|
-| `workday` | none | Enterprise/defense Workday boards; keyword search, paginated, full descriptions. The volume engine. |
-| `greenhouse` | none | Greenhouse public boards; one request returns every posting with its description. |
-| `lever` | none | Lever public postings. |
-| `ashby` | none | Ashby public job boards. |
-| `remoteok` | none | Single public feed; small, good for a quick smoke test. |
-| `usajobs` | free key | Federal/DoD postings, the richest certification source. Set `USAJOBS_API_KEY` and `USAJOBS_EMAIL`. |
-| `adzuna` | free key | Market-wide keyword search, highest raw volume. Set `ADZUNA_APP_ID` and `ADZUNA_APP_KEY`. |
-
-Default sources: `workday`, `greenhouse`.
-
-## Requirements
-
-Either Elixir 1.18+ on your machine, or Docker. The Justfile uses your local
-`mix` if it is installed and otherwise runs everything inside the official
-`elixir` Docker image, so a fresh clone needs nothing but Docker.
-
-## Usage
+## TL;DR — bare Linux box to first scan
 
 ```sh
-just setup        # install deps and compile (run once)
-just test         # run the test suite
-just run          # scrape with defaults (workday + greenhouse)
-just demo         # fast greenhouse-only run
-just build        # build the standalone ./certscout escript
+git clone <your-repo-url> certscout
+cd certscout
+./install.sh                       # installs Erlang + Elixir + deps, builds the binary
+./certscout --sources greenhouse   # your first scan, no API keys, ~1 minute
 ```
 
-Pass options straight through:
+That's the whole thing. Open `output/REPORT.md` when it finishes.
+
+---
+
+## What you need
+
+- A **Debian / Ubuntu / Kali** machine (anything `apt`-based). Brand-new install is fine.
+- Run as **root**, or as a user with **sudo**.
+- An **internet connection**.
+
+Nothing else. `install.sh` pulls in *everything* the project needs — you do not
+need to install Elixir, Erlang, or any dependency by hand.
+
+> Not on an apt distro? Install **Elixir 1.18+** however you like, then run
+> `mix deps.get && mix compile && mix escript.build`. Or use the
+> [Docker path](#no-install-docker-path) below — it needs nothing but Docker.
+
+---
+
+## Install
 
 ```sh
-just run --sources greenhouse,workday --target 8000 --top 10
-just run --sources greenhouse --output reports/run1
+./install.sh
 ```
 
-### Options
+What it does, in order:
+
+1. Installs system build tools (`build-essential`, `libssl-dev`, …) via `apt`.
+2. Installs **[mise](https://mise.jdx.dev)**, the version manager, then uses it to
+   install **Erlang/OTP 27 + Elixir 1.18**.
+3. Installs Hex + Rebar, fetches the project's dependencies, and compiles.
+4. Builds the standalone **`./certscout`** binary.
+
+> **First run takes ~5-10 minutes** because Erlang compiles from source. Grab a
+> coffee. It only happens once.
+>
+> If `install.sh` already finds a working Elixir 1.18+, it skips straight to step 3.
+>
+> After it finishes, `mix` is wired into new shells automatically. If `certscout`
+> isn't found in your *current* shell, just open a new terminal (or run
+> `eval "$(~/.local/bin/mise activate bash)"`).
+
+---
+
+## Run it
+
+**Fastest (no keys, great smoke test):**
+
+```sh
+./certscout --sources greenhouse
+```
+
+**Full default scrape (workday + greenhouse):**
+
+```sh
+./certscout
+```
+
+**Tune it:**
+
+```sh
+./certscout --sources greenhouse,workday --target 8000 --top 10
+./certscout --sources greenhouse --output reports/run1
+```
+
+Prefer a task runner? If you have [`just`](https://github.com/casey/just):
+
+```sh
+just install   # same as ./install.sh
+just demo      # quick greenhouse-only run
+just run       # full default scrape
+just build     # (re)build the ./certscout binary
+just test      # run the test suite
+```
+
+---
+
+## Options
 
 ```
---sources a,b,c     Sources to scrape
+--sources a,b,c     Sources to scrape (workday,greenhouse,lever,ashby,remoteok,usajobs,adzuna)
 --terms "x,y"       Search terms for keyword sources
 --target N | all    Cap on cybersecurity postings to analyze (default 12000)
 --top N             Number of certifications in the report (default 12)
@@ -75,7 +122,10 @@ just run --sources greenhouse --output reports/run1
 --lever-file F      Override Lever companies (one per line)
 --ashby-file F      Override Ashby orgs (one per line)
 --certs-file F      Override certification catalogue (JSON array)
+-h, --help          Show this help
 ```
+
+---
 
 ## Output
 
@@ -91,12 +141,55 @@ output/
   assets/                   downloaded certification logos
 ```
 
-## Customizing
+---
+
+## Sources
+
+Sources are pluggable. The defaults need no keys.
+
+| Source | Auth | Notes |
+|--------|------|-------|
+| `workday` | none | Enterprise/defense Workday boards; keyword search, paginated, full descriptions. The volume engine. |
+| `greenhouse` | none | Greenhouse public boards; one request returns every posting with its description. |
+| `lever` | none | Lever public postings. |
+| `ashby` | none | Ashby public job boards. Pass `--ashby-file lists/ashby_orgs.txt` for the bundled org list. |
+| `remoteok` | none | Single public feed; small, good for a quick smoke test. |
+| `usajobs` | free key | Federal/DoD postings, the richest certification source. Set `USAJOBS_API_KEY` and `USAJOBS_EMAIL`. |
+| `adzuna` | free key | Market-wide keyword search, highest raw volume. Set `ADZUNA_APP_ID` and `ADZUNA_APP_KEY`. |
+
+**Default sources:** `workday`, `greenhouse`.
+
+**Optional API keys** (set as environment variables before running):
+
+```sh
+export USAJOBS_API_KEY=...   USAJOBS_EMAIL=...     # enables the usajobs source
+export ADZUNA_APP_ID=...     ADZUNA_APP_KEY=...    # enables the adzuna source
+```
+
+Big, hand-verified company lists ship in [`lists/`](lists/) — point a source at one
+with the matching `--*-file` flag (e.g. `--ashby-file lists/ashby_orgs.txt`).
+
+---
+
+## Customizing the certifications
 
 The certification catalogue lives in `lib/cert_scout/certifications.ex`. To scan
-for a different set without editing code, pass `--certs-file` a JSON array of
-`{slug, name, issuer, aliases, logo}` objects. To point a source at different
-companies, use the `--*-file` overrides.
+for a different set without touching code, pass `--certs-file` a JSON array of
+`{slug, name, issuer, aliases, logo}` objects.
+
+---
+
+## No-install (Docker path)
+
+Don't want to install Elixir at all? You only need Docker. The `Justfile`
+auto-detects it and runs everything inside the official `elixir` image:
+
+```sh
+just demo                  # quick greenhouse-only run, fully containerized
+just run --sources greenhouse,workday
+```
+
+---
 
 ## Notes on conduct
 

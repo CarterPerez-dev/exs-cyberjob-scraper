@@ -21,4 +21,13 @@ defmodule CertScout.Cyber do
   end
 
   def match?(_), do: false
+
+  @doc """
+  The single inclusion policy every source and the orchestrator share: keep any
+  non-empty title under `--all`, otherwise keep only genuine cybersecurity roles.
+  """
+  @spec keep?(term(), CertScout.Config.t()) :: boolean()
+  def keep?(title, %CertScout.Config{include_all: true}) when is_binary(title), do: title != ""
+  def keep?(title, _config) when is_binary(title), do: match?(title)
+  def keep?(_title, _config), do: false
 end
